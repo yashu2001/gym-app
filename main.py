@@ -489,6 +489,7 @@ def dbfun():
                     )
     conn.commit()    
 dbfun()
-
-while(1):
+def main():
+    while(1):
     fun0()    
+main()
