@@ -12,8 +12,12 @@ from tkinter import Tk
 from tkinter.filedialog import askdirectory
 from colorama import init, Fore, Back, Style
 init(convert=True)
-conn = sqlite3.connect('maindb.sqlite')
-cur = conn.cursor()
+try:
+    conn = sqlite3.connect('maindb.sqlite')
+    cur = conn.cursor()
+except:
+    print('CONNECTION ERROR')
+    time.sleep(5)
 def mk_attd1():
     os.system('cls')
     cur.execute('''
@@ -21,7 +25,7 @@ def mk_attd1():
                 '''
                 )
     c_ids=cur.fetchall()
-    print(c_ids)
+    #print(c_ids)
     print('ABC GYM')
     c_id=int(input('enter client id:'))
     t=1
@@ -61,8 +65,8 @@ def mk_attd2():
                 '''
                 )
     c_ids=cur.fetchall()
-    print(c_ids)
-    print('ABC GYM')
+    #print(c_ids)
+    print('ABC GYM\n')
     c_id=int(input('enter client id:'))
     t=1
     for x in c_ids:
@@ -116,12 +120,7 @@ def chg_pass():
     else:
         chg_pass()
     return None
-def pay_h():
-    print('pay_h')
-    return None
-def pay_due():
-    print('pay_due')
-    return None
+
 def attd_rep():
     os.system('cls')
     print('ABC GYM')
@@ -343,13 +342,65 @@ def ad_cl():
 def pl_data():
     print('ABC GYM')
     os.system('cls')
-    name=input('enter name of plan')
-    sub_pm=int(input('enter subscription rate per month'))
+    name=input('enter name of plan :')
+    sub_pm=int(input('enter subscription rate per month :'))
     name="'"+name+"'"
     cur.execute('''
                 INSERT INTO Plan_data (p_name,sub_pm) VALUES ({},{})
                 '''.format(name,sub_pm))
     conn.commit()
+def pay_h():
+    print('ABC GYM')
+    os.system('cls')
+    c_id=int(input('ENTER CLIENT ID TO RETRIEVE PAYMENT HISTORY:'))
+    mysel=cur.execute('''
+                 SELECT c_id,amount,date
+                 FROM PayHistory WHERE c_id={}
+                '''.format(c_id))
+    for i,row in enumerate(mysel):
+        count=1
+        for j,value in enumerate(row):
+            if(count==1):
+                print('id:',value)
+                count=count+1
+                continue
+            if(count==2):
+                print('amount:',value)
+                count=count+1
+                continue
+            if(count==3):
+                print('date:',value)
+                count=count+1
+                continue
+    inp=input('press enter to continue')
+    if(inp=='\n'):
+        return None
+def progress(status, remaining, total):
+    print(f'Copied {total-remaining} of {total} pages...')    
+def bckp():
+    nm=input('enter name for backup file')
+    nm=nm+'.sqlite'
+    try:
+        bckpconn= sqlite3.connect('{}'.format(nm))
+        with bckpconn:
+            conn.backup(bckpconn, pages=0, progress=progress)
+        print("backup successful")
+        time.sleep(5)
+    except sqlite3.Error as error:
+        print("Error while taking backup: ", error)
+        time.sleep(5)
+def resto():
+    nm=input('enter name for backup file')
+    nm=nm+'.sqlite'
+    try:
+        bckpconn= sqlite3.connect('{}'.format(nm))
+        with bckpconn:
+            bckpconn.backup(conn, pages=0, progress=progress)
+        print("restore successful")
+        time.sleep(5)
+    except sqlite3.Error as error:
+        print("Error while restoring: ", error)
+        time.sleep(5)
 def admin():
     #function to handle what admin wants to do
     while(1):
@@ -361,22 +412,25 @@ def admin():
         print('3.make payment entry')
         print('4.mark attendance')
         print('5.retrieve attendance report')
-        print('6.check payment dues')
-        print('7.payment history by user id' )
-        print('8.change password')
-        print('9.add new plan')
-        print('10.logout')
+        print('7.change password')
+        print('8.add new plan')
+        print('9.payment history')
+        print('10.backup database')
+        print('11.restore backup')
+        print('12.logout')
         n=int(input('enter your choice:'))
+        if(n==11):
+            var=resto()
         if(n==10):
-            break
+            var=bckp()
         if(n==9):
-            var=pl_data()
-        if(n==8):
-            var=chg_pass()
-        if(n==7):
             var=pay_h()
-        if(n==6):
-            var=pay_due()
+        if(n==12):
+            break
+        if(n==8):
+            var=pl_data()
+        if(n==7):
+            var=chg_pass()
         if(n==5):
             var=attd_rep()
         if(n==4):
@@ -391,7 +445,7 @@ def emp():
     #function to handle what user wants to do
     while(1):
         os.system('cls')
-        print(Fore.MAGENTA+'ABC GYM')
+        print(Fore.RED+'ABC GYM')
         print('EMPLOYEE PANEL:')
         print('1.mark attendance')
         print('2.logout')
@@ -404,21 +458,24 @@ def emp():
 def fun0():
     #function to handle login of users
     os.system('cls')
-    print(Style.BRIGHT+Fore.CYAN+'WELCOME TO ABC GYM')
+    print(Style.BRIGHT+Fore.RED+'WELCOME TO GYM MANAGEMENT SYSTEM')
     time.sleep(1)
-    uname=list(input('enter username:'))
-    uname.append('\'')
-    uname.insert(0,'\'')
-    uname=''.join(uname)    
-    cur.execute('''
-                    SELECT u_pass,u_type FROM Users WHERE u_name={}'''.format(uname))
-    psd=cur.fetchall()
-    pswd=getpass.getpass(prompt='Password:')
-    if((psd[0][0])==pswd and (psd[0][1])==1):
-        admin()
-    elif((psd[0][0])==pswd and (psd[0][1])==0):
-        emp()
-        
+    try:
+        uname=list(input('enter username:'))
+        uname.append('\'')
+        uname.insert(0,'\'')
+        uname=''.join(uname)    
+        cur.execute('''
+                        SELECT u_pass,u_type FROM Users WHERE u_name={}'''.format(uname))
+        psd=cur.fetchall()
+        pswd=getpass.getpass(prompt='Password:')
+        if((psd[0][0])==pswd and (psd[0][1])==1):
+            admin()
+        elif((psd[0][0])==pswd and (psd[0][1])==0):
+            emp()
+    except:
+        print('Invalid credentials')
+        fun0()
     
 def dbfun():
     cur.execute('''
@@ -490,6 +547,7 @@ def dbfun():
     conn.commit()    
 dbfun()
 def main():
+    print(Back.WHITE)
     while(1):
-    fun0()    
+        fun0()    
 main()
