@@ -1,2 +1,2 @@
 # gym-app
-A simple Gym management system to simplify day to day tasks in a gym.
+A simple CLI based Gym management system to simplify day to day tasks in a gym along with generating excel reports for attendance.
